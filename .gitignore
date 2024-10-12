@@ -2,3 +2,8 @@
 archive.zip
 data.csv
 dataset
+logs
+model_store
+__pycache__
+*.jpg
+Test*
