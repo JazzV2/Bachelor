@@ -3,6 +3,9 @@ import cv2 as cv
 import numpy as np
 import importlib.util
 import inspect
+import torch
+import json
+import os
 
 class ModelHandler(BaseHandler):
     """
@@ -35,10 +38,10 @@ class ModelHandler(BaseHandler):
 
         model_class = self.getModel(model_file)
         self.model = model_class()
-        state_dict = torch.load(model_pt_path, map_location=self.device)
+        self.model.to(self.device)
+        state_dict = torch.load(self.model_pt_path, map_location=self.device)
         self.model.load_state_dict(state_dict)
 
-        self.model.to(self.device)
         self.model.eval()
         
         self.initialized = True
@@ -55,11 +58,14 @@ class ModelHandler(BaseHandler):
         if preprocessed_data is None:
             preprocessed_data = data[0].get("body")
         
-        image = cv.imread(preprocessed_data)
+        np_preprocessed_data = np.asarray(preprocessed_data, dtype=np.uint8)
+        image = cv.imdecode(np_preprocessed_data, cv.IMREAD_COLOR)
         rgb_image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
         resize_image = cv.resize(rgb_image, (100, 100))
         std_image = resize_image / 255
         std_image = np.moveaxis(std_image, 2, 0).astype(dtype='float32')
+        std_image = np.array([std_image])
+        preprocessed_data = torch.from_numpy(std_image).to(self.device)
 
         return preprocessed_data
 
@@ -71,7 +77,7 @@ class ModelHandler(BaseHandler):
         :return: list of inference output in NDArray
         """
         # Do some inference call to engine here and return output
-        model_output = self.model.forward(model_input)
+        model_output = self.model(model_input)
         return model_output
 
     def postprocess(self, inference_output):
@@ -81,8 +87,8 @@ class ModelHandler(BaseHandler):
         :return: list of predict results
         """
         # Take output from network and post-process to desired format
-        postprocess_output = inference_output
-        return postprocess_output
+        postprocess_output = self.translateOutput(inference_output)
+        return [postprocess_output]
 
     def handle(self, data, context):
         """
@@ -92,6 +98,9 @@ class ModelHandler(BaseHandler):
         :param context: Initial context contains model server system properties.
         :return: prediction output
         """
+
+        self.context = context
+
         model_input = self.preprocess(data)
         model_output = self.inference(model_input)
         return self.postprocess(model_output)
@@ -104,4 +113,13 @@ class ModelHandler(BaseHandler):
                 if inspect.isclass(attribute):
                     model = attribute
                     return model
+                
+    def translateOutput(self, output):
+        emotions = {'Surprise': 0, 'Sad': 1, 'Ahegao': 2, 'Happy': 3, 'Neutral': 4, 'Angry': 5}
+        answer = {}
+        exp_output = torch.exp(output)
+        for i in emotions:
+            answer[i] = exp_output[0][emotions[i]].item()
+
+        return json.dumps(answer)
                 
