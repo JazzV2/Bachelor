@@ -7,4 +7,4 @@ model_store/
 __pycache__
 *.jpg
 Test*
-model_store_f/
+model_store_tf/
