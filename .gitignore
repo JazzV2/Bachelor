@@ -3,7 +3,8 @@ archive.zip
 data.csv
 dataset
 logs
-model_store
+model_store/
 __pycache__
 *.jpg
 Test*
+model_store_f/
