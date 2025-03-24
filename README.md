@@ -4,3 +4,4 @@ For monitoring, a Prometheus server was used, with Grafana for visualization.
 The system was tested using k6.
 CNN models were created and trained to recognize emotions from human facial images.
 Used photos: https://www.kaggle.com/datasets/thienkhonghoc/affectnet
+Plans for the future: implement the system in the cloud and add online model learning.
