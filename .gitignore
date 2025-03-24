@@ -1,10 +1,8 @@
 *checkpoint*
-archive.zip
-data.csv
-dataset
 logs
-model_store/
 __pycache__
 *.jpg
 Test*
-model_store_tf/
+emotions
+*.zip
+*.csv
